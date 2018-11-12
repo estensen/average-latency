@@ -26,6 +26,7 @@ func querySite(site string) {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("All bytes:", time.Since(start))
 }
 
 func main() {
