@@ -11,19 +11,23 @@ import (
 
 func querySites(urls []string, avgFlag bool) {
 	urlsLen := len(urls)
-	var latency time.Duration
+	var sumFirstLatency, sumLastLatency time.Duration
+
 	for _, url := range urls {
 		switch avgFlag {
 		case true:
-			firstLatency, _ := getLatency(url)
-			latency = latency + firstLatency
+			firstLatency, lastLatency := getLatency(url)
+			sumFirstLatency = sumFirstLatency + firstLatency
+			sumLastLatency = sumLastLatency + lastLatency
 		default:
 			querySite(url)
 		}
 	}
 	if avgFlag {
-		avgLatency := latency.Seconds() / float64(urlsLen) * 1000
-		fmt.Printf("Avg first latency: %fms\n", avgLatency)
+		avgFirstLatency := sumFirstLatency.Seconds() / float64(urlsLen) * 1000
+		avgAllLatency := sumLastLatency.Seconds() / float64(urlsLen) * 1000
+		fmt.Printf("Avg first latency: %fms\n", avgFirstLatency)
+		fmt.Printf("Avg last latency: %fms\n", avgAllLatency)
 	}
 }
 
@@ -69,9 +73,9 @@ func getLatency(url string) (time.Duration, time.Duration) {
 	if err != nil {
 		panic(err)
 	}
-	allLatency := time.Since(start)
+	lastLatency := time.Since(start)
 
-	return firstLatency, allLatency
+	return firstLatency, lastLatency
 }
 
 func main() {
