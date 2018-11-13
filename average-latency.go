@@ -2,10 +2,20 @@ package main
 
 import (
 	"fmt"
+	"gopkg.in/urfave/cli.v2"
 	"io/ioutil"
 	"net"
+	"os"
 	"time"
 )
+
+func querySites() {
+	sites := []string{"vg.no:80", "nrk.no:80", "aftenposten.no:80"}
+
+	for _, site := range sites {
+		querySite(site)
+	}
+}
 
 func querySite(site string) {
 	fmt.Println("Querying ", site)
@@ -30,9 +40,14 @@ func querySite(site string) {
 }
 
 func main() {
-	sites := []string{"vg.no:80", "nrk.no:80", "aftenposten.no:80"}
-
-	for _, site := range sites {
-		querySite(site)
+	app := &cli.App{
+		Name: "average-latency",
+		Usage: "get average latency of web sites",
+		Action: func(c *cli.Context) error {
+			querySites()
+			return nil
+		},
 	}
+
+	app.Run(os.Args)
 }
