@@ -9,9 +9,7 @@ import (
 	"time"
 )
 
-func querySites() {
-	sites := []string{"vg.no:80", "nrk.no:80", "aftenposten.no:80"}
-
+func querySites(sites []string) {
 	for _, site := range sites {
 		querySite(site)
 	}
@@ -44,7 +42,8 @@ func main() {
 		Name: "average-latency",
 		Usage: "get average latency of web sites",
 		Action: func(c *cli.Context) error {
-			querySites()
+			sites := c.Args().Slice()
+			querySites(sites)
 			return nil
 		},
 	}
