@@ -9,15 +9,15 @@ import (
 	"time"
 )
 
-func querySites(sites []string) {
-	for _, site := range sites {
-		querySite(site)
+func querySites(urls []string) {
+	for _, url := range urls {
+		querySite(url)
 	}
 }
 
-func querySite(site string) {
-	fmt.Println("Querying ", site)
-	conn, err := net.Dial("tcp", site)
+func querySite(url string) {
+	fmt.Println("Querying ", url)
+	conn, err := net.Dial("tcp", url + ":80")
 	defer conn.Close()
 
 	conn.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
@@ -42,8 +42,8 @@ func main() {
 		Name: "average-latency",
 		Usage: "get average latency of web sites",
 		Action: func(c *cli.Context) error {
-			sites := c.Args().Slice()
-			querySites(sites)
+			urls := c.Args().Slice()
+			querySites(urls)
 			return nil
 		},
 	}
