@@ -10,13 +10,20 @@ import (
 )
 
 func querySites(urls []string, avgFlag bool) {
+	urlsLen := len(urls)
+	var latency time.Duration
 	for _, url := range urls {
 		switch avgFlag {
 		case true:
-			getLatency(url)
+			firstLatency, _ := getLatency(url)
+			latency = latency + firstLatency
 		default:
 			querySite(url)
 		}
+	}
+	if avgFlag {
+		avgLatency := latency.Seconds() / float64(urlsLen) * 1000
+		fmt.Printf("Avg first latency: %fms\n", avgLatency)
 	}
 }
 
@@ -42,7 +49,7 @@ func querySite(url string) {
 	fmt.Println("All bytes:", time.Since(start))
 }
 
-func getLatency(url string) {
+func getLatency(url string) (time.Duration, time.Duration) {
 	fmt.Println("Querying ", url)
 	conn, err := net.Dial("tcp", url+":80")
 	defer conn.Close()
@@ -51,18 +58,20 @@ func getLatency(url string) {
 
 	start := time.Now()
 	oneByte := make([]byte, 1)
+
 	_, err = conn.Read(oneByte)
 	if err != nil {
 		panic(err)
 	}
-
-	latency := time.Since(start)
-	fmt.Println("First byte:", latency)
+	firstLatency := time.Since(start)
 
 	_, err = ioutil.ReadAll(conn)
 	if err != nil {
 		panic(err)
 	}
+	allLatency := time.Since(start)
+
+	return firstLatency, allLatency
 }
 
 func main() {
