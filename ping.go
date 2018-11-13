@@ -39,8 +39,8 @@ func querySite(url string) {
 
 func main() {
 	app := &cli.App{
-		Name: "average-latency",
-		Usage: "get average latency of web sites",
+		Name: "ping",
+		Usage: "get latencies of web sites",
 		Action: func(c *cli.Context) error {
 			urls := c.Args().Slice()
 			querySites(urls)
