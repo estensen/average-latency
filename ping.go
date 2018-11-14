@@ -10,61 +10,47 @@ import (
 	"time"
 )
 
+type queryResult struct {
+	url string
+	firstLatency time.Duration
+	lastLatency time.Duration
+}
+
 func querySites(urls []string, avgFlag bool) {
 	var wg sync.WaitGroup
-	latencies := make(chan []time.Duration, 100)
+	latencies := make(chan queryResult, 100)
 	urlsLen := len(urls)
 
 	for _, url := range urls {
 		wg.Add(1)
-		switch avgFlag {
-		case true:
-			firstLatency, lastLatency := getLatency(url)
-			latencies <- []time.Duration{firstLatency, lastLatency}
-		default:
-			querySite(url)
-		}
+		firstLatency, lastLatency := getLatency(url)
+		latencies <- queryResult{url, firstLatency, lastLatency}
 		wg.Done()
 	}
 
 	wg.Wait()
 	close(latencies)
 
-	if avgFlag {
-		var sumFirstLatency, sumLastLatency time.Duration
+	var sumFirstLatency, sumLastLatency time.Duration
 
-		for latency := range latencies {
-			firstLatency, lastLatency := latency[0], latency[1]
-			sumFirstLatency, sumLastLatency = sumFirstLatency + firstLatency, sumLastLatency + lastLatency
+	for latency := range latencies {
+		url, firstLatency, lastLatency := latency.url, latency.firstLatency, latency.lastLatency
+		sumFirstLatency, sumLastLatency = sumFirstLatency + firstLatency, sumLastLatency + lastLatency
+
+		if !avgFlag {
+			println(url)
+			println("First latency:", firstLatency)
+			println("Last latency:", lastLatency)
 		}
+	}
 
+	if avgFlag {
 		avgFirstLatency := sumFirstLatency.Seconds() / float64(urlsLen) * 1000
 		avgAllLatency := sumLastLatency.Seconds() / float64(urlsLen) * 1000
+		fmt.Println("Aggregated stats")
 		fmt.Printf("Avg first latency: %fms\n", avgFirstLatency)
 		fmt.Printf("Avg last latency: %fms\n", avgAllLatency)
 	}
-}
-
-func querySite(url string) {
-	fmt.Println("Querying ", url)
-	conn, err := net.Dial("tcp", url + ":80")
-	defer conn.Close()
-
-	conn.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
-
-	start := time.Now()
-	oneByte := make([]byte, 1)
-	_, err = conn.Read(oneByte)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("First byte:", time.Since(start))
-
-	_, err = ioutil.ReadAll(conn)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("All bytes:", time.Since(start))
 }
 
 func getLatency(url string) (time.Duration, time.Duration) {
