@@ -6,24 +6,38 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"sync"
 	"time"
 )
 
 func querySites(urls []string, avgFlag bool) {
+	var wg sync.WaitGroup
+	latencies := make(chan []time.Duration, 100)
 	urlsLen := len(urls)
-	var sumFirstLatency, sumLastLatency time.Duration
 
 	for _, url := range urls {
+		wg.Add(1)
 		switch avgFlag {
 		case true:
 			firstLatency, lastLatency := getLatency(url)
-			sumFirstLatency = sumFirstLatency + firstLatency
-			sumLastLatency = sumLastLatency + lastLatency
+			latencies <- []time.Duration{firstLatency, lastLatency}
 		default:
 			querySite(url)
 		}
+		wg.Done()
 	}
+
+	wg.Wait()
+	close(latencies)
+
 	if avgFlag {
+		var sumFirstLatency, sumLastLatency time.Duration
+
+		for latency := range latencies {
+			firstLatency, lastLatency := latency[0], latency[1]
+			sumFirstLatency, sumLastLatency = sumFirstLatency + firstLatency, sumLastLatency + lastLatency
+		}
+
 		avgFirstLatency := sumFirstLatency.Seconds() / float64(urlsLen) * 1000
 		avgAllLatency := sumLastLatency.Seconds() / float64(urlsLen) * 1000
 		fmt.Printf("Avg first latency: %fms\n", avgFirstLatency)
