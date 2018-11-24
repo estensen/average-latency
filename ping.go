@@ -23,7 +23,7 @@ func querySites(urls []string, avgFlag bool) {
 
 	for _, url := range urls {
 		wg.Add(1)
-		firstLatency, lastLatency := getLatency(url)
+		firstLatency, lastLatency := GetLatency(url)
 		latencies <- queryResult{url, firstLatency, lastLatency}
 		wg.Done()
 	}
@@ -53,7 +53,7 @@ func querySites(urls []string, avgFlag bool) {
 	}
 }
 
-func getLatency(url string) (time.Duration, time.Duration) {
+func GetLatency(url string) (time.Duration, time.Duration) {
 	fmt.Println("Querying ", url)
 	conn, err := net.Dial("tcp", url+":80")
 	defer conn.Close()
